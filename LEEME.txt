@@ -1,0 +1,21 @@
+LEVANTAMIENTOS — VERSIÓN LOCAL
+
+Para abrir: haz doble clic en "Abrir Levantamientos.cmd".
+Se abrirá tu navegador en http://localhost:4178/
+
+1. Abre "Catálogo de ramales" y captura el nombre del ramal, su subestación y sus circuitos.
+2. Selecciona el ramal y pulsa "Nuevo levantamiento".
+3. Captura circuito, ubicación, fecha, número de podas y número de cuadrillas.
+4. Usa tu ubicación, escribe las coordenadas o marca el punto en el mapa.
+5. Guarda el levantamiento. El filtro por ramal actualiza la lista y el mapa.
+
+Puedes corregir ramales y levantamientos con el botón del lápiz.
+
+Los registros se guardan en esta computadora, en la carpeta .wrangler\state de esta aplicación. Cerrar el navegador no borra los datos. Para hacer una copia de respaldo, primero usa "Detener Levantamientos.cmd" y copia la carpeta .wrangler completa a otro lugar seguro. Conserva la carpeta de la aplicación completa.
+
+El mapa necesita Internet para cargar su cartografía. La ubicación del dispositivo necesita tu autorización en el navegador; también puedes escribir las coordenadas. Los puntos muestran levantamientos, no el trazado de los ramales.
+
+Para cerrar el programa en segundo plano: usa "Detener Levantamientos.cmd".
+Después de reiniciar Windows, vuelve a usar "Abrir Levantamientos.cmd".
+
+La aplicación no está publicada. Solo escucha en esta computadora. Esta carpeta está preparada para el Node.js instalado en esta computadora.

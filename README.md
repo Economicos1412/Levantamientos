@@ -1,12 +1,12 @@
 # Levantamientos
 
-Aplicación en español para registrar trabajo de campo y consultarlo por ramal.
+Aplicación en español para registrar trabajo de campo y consultarlo por ramal. Se entrega para uso local, sin publicación, por elección del usuario. Abrir con `Abrir Levantamientos.cmd`; consultar `LEEME.txt`.
 
 - Catálogo editable de ramales, subestaciones y circuitos.
 - Captura y edición de ubicación, fecha, coordenadas, podas y número de cuadrillas.
 - Filtro por ramal que actualiza los registros y el mapa.
 - Geolocalización mediante permiso del dispositivo, coordenadas manuales o selección de un punto en el mapa.
-- Persistencia en D1. El acceso inicial de Sites es privado para su propietario.
+- Persistencia en SQLite mediante D1 local, en `.wrangler/state`. El servidor escucha únicamente en `127.0.0.1` y se abre en `http://localhost:4178/`.
 
 ## Desarrollo
 
