@@ -29,3 +29,17 @@ async function save(request: Request, edit: boolean) {
 }
 export async function POST(request: Request) { return save(request, false); }
 export async function PUT(request: Request) { return save(request, true); }
+
+export async function DELETE(request: Request) {
+  try {
+    const id = new URL(request.url).searchParams.get('id');
+    if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) throw new InputError('El ramal no es válido.');
+    const db = database();
+    const existing = await db.prepare('SELECT nombre FROM ramales WHERE id = ?').bind(id).first<{ nombre: string }>();
+    if (!existing) return result({ error: 'El ramal ya no existe.' }, 404);
+    const linked = await db.prepare('SELECT COUNT(*) AS total FROM levantamientos WHERE ramal_id = ?').bind(id).first<{ total: number }>();
+    if ((linked?.total ?? 0) > 0) return result({ error: `No se puede quitar ${existing.nombre} porque tiene ${linked?.total} levantamiento${linked?.total === 1 ? '' : 's'} asociado${linked?.total === 1 ? '' : 's'}.` }, 409);
+    await db.prepare('DELETE FROM ramales WHERE id = ?').bind(id).run();
+    return result({ id, nombre: existing.nombre });
+  } catch (e) { return failure(e); }
+}

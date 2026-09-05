@@ -10,6 +10,7 @@ Se abrirá tu navegador en http://localhost:4178/
 5. Guarda el levantamiento. El filtro por ramal actualiza la lista y el mapa.
 
 Puedes corregir ramales y levantamientos con el botón del lápiz.
+Puedes quitar un ramal con el botón de la papelera. El programa pedirá confirmación y protegerá los ramales que todavía tengan levantamientos asociados.
 Los ramales aparecen en el mapa con una R naranja; los levantamientos, con puntos azules. Al seleccionar un ramal se muestran su ubicación, coordenadas y cuadrillas. Completa estos campos al editar los ramales capturados antes de esta actualización.
 
 Los registros se guardan en esta computadora, en la carpeta .wrangler\state de esta aplicación. Cerrar el navegador no borra los datos. Para hacer una copia de respaldo, primero usa "Detener Levantamientos.cmd" y copia la carpeta .wrangler completa a otro lugar seguro. Conserva la carpeta de la aplicación completa.
