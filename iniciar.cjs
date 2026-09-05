@@ -37,6 +37,7 @@ function stop() {
 
 async function main() {
   if (process.argv.includes('--stop')) { stop(); return; }
+  let serverChild;
   if (!(await running())) {
     const wrangler = path.join(root, 'node_modules', 'wrangler', 'bin', 'wrangler.js');
     if (!fs.existsSync(wrangler) || !fs.existsSync(config)) throw new Error('Faltan archivos de la aplicación. Conserva completa la carpeta Levantamientos.');
@@ -47,6 +48,7 @@ async function main() {
     });
     child.on('error', error => { console.error(error.message); process.exitCode = 1; });
     child.unref();
+    serverChild = child;
     fs.closeSync(log);
     fs.writeFileSync(pidFile, JSON.stringify({ pid: child.pid, createdAt: new Date().toISOString(), url }));
     let ready = false;
@@ -60,6 +62,11 @@ async function main() {
   if (!process.argv.includes('--no-browser')) {
     const browser = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', `Start-Process ${psQuote(url)}`], { windowsHide: true, detached: true, stdio: 'ignore' });
     browser.unref();
+  }
+  // A retained terminal can keep the server alive inside managed execution environments.
+  if (process.argv.includes('--stay') && serverChild) {
+    serverChild.ref();
+    await new Promise(resolve => serverChild.once('exit', resolve));
   }
 }
 main().catch(error => { console.error(error.message); process.exitCode = 1; });
