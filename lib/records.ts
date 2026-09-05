@@ -1,7 +1,7 @@
-export type Ramal = { id: string; nombre: string; subestacion: string; circuitos: string[] };
+export type Ramal = { id: string; nombre: string; subestacion: string; circuitos: string[]; cuadrillas: number | null; ubicacion: string | null; latitud: number | null; longitud: number | null };
 export type Levantamiento = { id: string; ramalId: string; circuito: string; ubicacion: string; latitud: number; longitud: number; podas: number; cuadrillas: number; fecha: string; ramal: string; subestacion: string };
 export type RecordInput = Omit<Levantamiento, 'id' | 'ramal' | 'subestacion'>;
-export type RamalInput = Omit<Ramal, 'id'>;
+export type RamalInput = Omit<Ramal, 'id' | 'cuadrillas' | 'ubicacion' | 'latitud' | 'longitud'> & { cuadrillas: number; ubicacion: string; latitud: number; longitud: number };
 export class InputError extends Error {}
 function obj(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new InputError('Los datos enviados no son válidos.');
@@ -16,7 +16,10 @@ export function validateRamal(value: unknown): RamalInput {
   if (!Array.isArray(v.circuitos) || v.circuitos.length < 1 || v.circuitos.length > 100) throw new InputError('Agrega entre 1 y 100 circuitos.');
   const circuitos = v.circuitos.map(c => text(c, 'Circuito'));
   if (new Set(circuitos.map(c => c.toLocaleLowerCase('es'))).size !== circuitos.length) throw new InputError('Hay circuitos repetidos.');
-  return { nombre: text(v.nombre, 'Ramal'), subestacion: text(v.subestacion, 'Subestación'), circuitos };
+  if (typeof v.cuadrillas !== 'number' || !Number.isInteger(v.cuadrillas) || v.cuadrillas < 0 || v.cuadrillas > 10000) throw new InputError('Cuadrillas: ingresa un número entero entre 0 y 10000.');
+  if (typeof v.latitud !== 'number' || !Number.isFinite(v.latitud) || Math.abs(v.latitud) > 90) throw new InputError('Latitud: ingresa un número entre -90 y 90.');
+  if (typeof v.longitud !== 'number' || !Number.isFinite(v.longitud) || Math.abs(v.longitud) > 180) throw new InputError('Longitud: ingresa un número entre -180 y 180.');
+  return { nombre: text(v.nombre, 'Ramal'), subestacion: text(v.subestacion, 'Subestación'), circuitos, cuadrillas: v.cuadrillas, ubicacion: text(v.ubicacion, 'Ubicación', 500), latitud: v.latitud, longitud: v.longitud };
 }
 export function validateRecord(value: unknown): RecordInput {
   const v = obj(value);

@@ -2,7 +2,7 @@
 
 Aplicación en español para registrar trabajo de campo y consultarlo por ramal. Se entrega para uso local, sin publicación, por elección del usuario. Abrir con `Abrir Levantamientos.cmd`; consultar `LEEME.txt`.
 
-- Catálogo editable de ramales, subestaciones y circuitos.
+- Catálogo editable de ramales, subestaciones y circuitos, con número de cuadrillas, ubicación y coordenadas por ramal.
 - Captura y edición de ubicación, fecha, coordenadas, podas y número de cuadrillas.
 - Filtro por ramal que actualiza los registros y el mapa.
 - Geolocalización mediante permiso del dispositivo, coordenadas manuales o selección de un punto en el mapa.

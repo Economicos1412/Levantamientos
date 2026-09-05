@@ -6,6 +6,10 @@ export const ramales = sqliteTable('ramales', {
   nombreKey: text('nombre_key').notNull(),
   subestacion: text('subestacion').notNull(),
   circuitos: text('circuitos').notNull(),
+  cuadrillas: integer('cuadrillas'),
+  ubicacion: text('ubicacion'),
+  latitud: real('latitud'),
+  longitud: real('longitud'),
   createdAt: text('created_at').notNull(),
 }, (t) => [uniqueIndex('idx_ramales_nombre_key').on(t.nombreKey)]);
 

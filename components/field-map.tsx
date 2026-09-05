@@ -1,12 +1,13 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import type * as Leaflet from 'leaflet';
-import type { Levantamiento } from '@/lib/records';
+import type { Levantamiento, Ramal } from '@/lib/records';
 import { Skeleton } from '@/components/ui/skeleton';
 
-type Props = { records?: Levantamiento[]; selected?: string | null; onSelect?: (id: string) => void; point?: [number, number] | null; onPick?: (point: [number, number]) => void; compact?: boolean };
+type Props = { records?: Levantamiento[]; ramales?: Ramal[]; selected?: string | null; onSelect?: (id: string) => void; point?: [number, number] | null; onPick?: (point: [number, number]) => void; compact?: boolean };
 const EMPTY: Levantamiento[] = [];
-export default function FieldMap({ records = EMPTY, selected, onSelect, point, onPick, compact }: Props) {
+const NO_RAMALES: Ramal[] = [];
+export default function FieldMap({ records = EMPTY, ramales = NO_RAMALES, selected, onSelect, point, onPick, compact }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<Leaflet.Map | null>(null);
   const lib = useRef<typeof Leaflet | null>(null);
@@ -37,15 +38,26 @@ export default function FieldMap({ records = EMPTY, selected, onSelect, point, o
     const L = lib.current, m = map.current, group = layers.current;
     if (!ready || !L || !m || !group) return;
     group.clearLayers();
+    const bounds: [number, number][] = [];
+    for (const r of ramales) {
+      if (r.latitud === null || r.longitud === null || !Number.isFinite(r.latitud) || !Number.isFinite(r.longitud)) continue;
+      const position: [number, number] = [r.latitud, r.longitud];
+      bounds.push(position);
+      const popup = document.createElement('div');
+      const title = document.createElement('strong'); title.textContent = `Ramal: ${r.nombre}`; popup.appendChild(title);
+      for (const line of [r.ubicacion || 'Sin ubicación registrada', `Subestación: ${r.subestacion}`, `Circuitos: ${r.circuitos.join(', ')}`, `Cuadrillas del ramal: ${r.cuadrillas ?? 'Sin registrar'}`, `${r.latitud.toFixed(6)}, ${r.longitud.toFixed(6)}`]) { const p = document.createElement('p'); p.textContent = line; popup.appendChild(p); }
+      L.marker(position, { title: `Ramal: ${r.nombre}`, alt: `Ramal ${r.nombre}: ${r.ubicacion || ''}`, icon: L.divIcon({ className: 'survey-marker ramal-marker', html: '<span>R</span>', iconSize: [34,34], iconAnchor: [17,17] }) }).bindPopup(popup).addTo(group);
+    }
     for (const [i, r] of records.entries()) {
       const popup = document.createElement('div');
       const title = document.createElement('strong'); title.textContent = r.ubicacion; popup.appendChild(title);
       for (const line of [`Ramal: ${r.ramal}`, `Circuito: ${r.circuito}`, `Subestación: ${r.subestacion}`, `${r.podas} podas · ${r.cuadrillas} cuadrillas`, `${r.latitud.toFixed(6)}, ${r.longitud.toFixed(6)}`]) { const p = document.createElement('p'); p.textContent = line; popup.appendChild(p); }
       const marker = L.marker([r.latitud, r.longitud], { title: r.ubicacion, alt: `Levantamiento ${i + 1}: ${r.ubicacion}`, icon: L.divIcon({ className: 'survey-marker', html: `<span>${i + 1}</span>`, iconSize: [32,32], iconAnchor: [16,16] }) });
       marker.bindPopup(popup).on('click', () => callbacks.current.onSelect?.(r.id)).addTo(group);
+      bounds.push([r.latitud, r.longitud]);
     }
-    if (records.length) m.fitBounds(L.latLngBounds(records.map(r => [r.latitud, r.longitud] as [number,number])), { padding: [42,42], maxZoom: 16 });
-  }, [records, ready]);
+    if (bounds.length) m.fitBounds(L.latLngBounds(bounds), { padding: [42,42], maxZoom: 16 });
+  }, [records, ramales, ready]);
   useEffect(() => {
     if (!ready || !map.current || !selected) return;
     const r = records.find(x => x.id === selected);

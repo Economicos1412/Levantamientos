@@ -12,6 +12,7 @@ import { Empty, EmptyTitle, EmptyDescription } from '@/components/ui/empty';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import FieldMap from './field-map';
+import RamalLocation from './ramal-location';
 import { localDate, validateRamal, validateRecord, type Levantamiento, type Ramal, type RecordInput, type RamalInput } from '@/lib/records';
 
 async function request<T>(path: string, method = 'GET', data?: unknown): Promise<T> {
@@ -45,8 +46,9 @@ function Registry() {
   const [selected, setSelected] = useState<string | null>(null);
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [draft, setDraft] = useState<Draft | null>(null);
-  const [ramalDraft, setRamalDraft] = useState({ id: '', nombre: '', subestacion: '', circuitos: '' });
+  const [ramalDraft, setRamalDraft] = useState({ id: '', nombre: '', subestacion: '', circuitos: '', cuadrillas: '', ubicacion: '', latitud: '', longitud: '' });
   const [saveError, setSaveError] = useState('');
+  const [catalogEpoch, setCatalogEpoch] = useState(0);
   const [catalogError, setCatalogError] = useState('');
   const [saved, setSaved] = useState('');
   const [saving, setSaving] = useState(false);
@@ -57,6 +59,7 @@ function Registry() {
   const ramales = ramalQuery.data || emptyRamales;
   const records = recordsQuery.data || emptyRecords;
   const activeRamal = ramales.find(r => r.id === filter);
+  const visibleRamales = useMemo(() => filter === 'all' ? ramales : ramales.filter(r => r.id === filter), [ramales, filter]);
   const formRamal = ramales.find(r => r.id === draft?.ramalId);
   const totals = useMemo(() => records.reduce((a,r) => ({ podas: a.podas+r.podas, cuadrillas: a.cuadrillas+r.cuadrillas }), { podas: 0, cuadrillas: 0 }), [records]);
   const loading = ramalQuery.isPending || recordsQuery.isPending;
@@ -98,8 +101,9 @@ function Registry() {
     e.preventDefault(); if (catalogSaving) return;
     setCatalogSaving(true); setCatalogError('');
     try {
-      const r = await storeRamal({ nombre: ramalDraft.nombre, subestacion: ramalDraft.subestacion, circuitos: ramalDraft.circuitos.split(/\n|,/).map(c => c.trim()).filter(Boolean) }, ramalDraft.id || undefined);
-      changeFilter(r.id); setRamalDraft({ id: '', nombre: '', subestacion: '', circuitos: '' }); setSaved('Ramal guardado.');
+      if (![ramalDraft.cuadrillas, ramalDraft.latitud, ramalDraft.longitud].every(v => v.trim())) throw new Error('Completa las cuadrillas y coordenadas del ramal.');
+      const r = await storeRamal({ nombre: ramalDraft.nombre, subestacion: ramalDraft.subestacion, cuadrillas: Number(ramalDraft.cuadrillas), ubicacion: ramalDraft.ubicacion, latitud: Number(ramalDraft.latitud), longitud: Number(ramalDraft.longitud), circuitos: ramalDraft.circuitos.split(/\n|,/).map(c => c.trim()).filter(Boolean) }, ramalDraft.id || undefined);
+      changeFilter(r.id); setRamalDraft({ id: '', nombre: '', subestacion: '', circuitos: '', cuadrillas: '', ubicacion: '', latitud: '', longitud: '' }); setCatalogEpoch(v => v + 1); setSaved('Ramal guardado con ubicación y cuadrillas.');
     } catch (e) { setCatalogError(e instanceof Error ? e.message : 'No se pudo guardar el ramal.'); }
     finally { setCatalogSaving(false); }
   }
@@ -127,6 +131,7 @@ function Registry() {
     {saved && <p role="status" className="success-note">{saved}</p>}
     {loadError && <div role="alert" className="error-box">No se pudieron cargar los registros. <Button variant="outline" onClick={() => void refresh()}><RefreshCw/> Reintentar</Button></div>}
     <section className="filter-bar" aria-label="Filtro por ramal"><div className="filter-select"><Label htmlFor="filter-ramal">Ramal</Label><Choice id="filter-ramal" value={filter} onChange={changeFilter} options={[{ value: 'all', label: 'Todos los ramales' }, ...ramalOptions]}/></div><div className="ramal-context"><div><span className="context-label"><Building2 size={15}/> Subestación</span><strong>{activeRamal?.subestacion || (filter === 'all' ? 'Todas las subestaciones' : '—')}</strong></div><div><span className="context-label"><Network size={15}/> Circuitos</span><div className="circuit-tags">{activeRamal ? activeRamal.circuitos.map(c => <span key={c} className="circuit-tag">{c}</span>) : <span className="muted">Selecciona un ramal para ver sus circuitos</span>}</div></div></div></section>
+    {activeRamal && <section className="ramal-details" aria-label="Ubicación y cuadrillas del ramal"><div><span className="context-label"><MapPin size={15}/> Ubicación del ramal</span><strong>{activeRamal.ubicacion || 'Sin ubicación registrada'}</strong>{activeRamal.latitud !== null && activeRamal.longitud !== null && <p className="coordinates">{activeRamal.latitud.toFixed(6)}, {activeRamal.longitud.toFixed(6)}</p>}</div><div><span className="context-label"><Users size={15}/> Cuadrillas del ramal</span><strong>{activeRamal.cuadrillas ?? 'Sin registrar'}</strong></div></section>}
     <div className="work-grid">
       <section className="records-panel" aria-label="Levantamientos registrados">
         <div className="panel-title"><h3>Levantamientos</h3><span className="count-pill">{loading || loadError ? '—' : records.length}</span></div>
@@ -135,14 +140,14 @@ function Registry() {
           <div className="record-bottom"><span><Scissors size={15}/>{r.podas} podas</span><span><Users size={15}/>{r.cuadrillas} cuadrillas</span><Button size="icon" variant="ghost" aria-label={'Editar ' + r.ubicacion} onClick={() => editRecord(r)}><Pencil size={15}/></Button></div>
         </article>)}</div>}
       </section>
-      <section className="map-panel"><div className="panel-title"><MapPin size={19}/><h3>Mapa de levantamientos</h3><span className="map-scope">{activeRamal?.nombre || 'Todos los ramales'}</span></div><div className="map-area"><FieldMap records={records} selected={selected} onSelect={setSelected}/>{!loading && !loadError && !records.length && <div className="map-empty-note"><span className="legend-dot"/>Los puntos aparecerán al guardar un levantamiento.</div>}</div><div className="map-summary"><span><MapPin size={18}/><strong>{loading || loadError ? '—' : records.length}</strong> ubicaciones</span><span><Scissors size={18}/><strong>{loading || loadError ? '—' : totals.podas}</strong> podas</span><span><Users size={18}/><strong>{loading || loadError ? '—' : totals.cuadrillas}</strong> cuadrillas registradas</span></div></section>
+      <section className="map-panel"><div className="panel-title"><MapPin size={19}/><h3>Mapa de ramales y levantamientos</h3><span className="map-scope">{activeRamal?.nombre || 'Todos los ramales'}</span></div><div className="map-area"><FieldMap records={records} ramales={visibleRamales} selected={selected} onSelect={setSelected}/>{!loading && !loadError && !records.length && !visibleRamales.some(r => r.latitud !== null && r.longitud !== null) && <div className="map-empty-note"><span className="legend-dot"/>Agrega la ubicación de un ramal o un levantamiento.</div>}</div><div className="map-legend"><span><i className="ramal-dot"/> Ramales</span><span><i className="legend-dot"/> Levantamientos</span></div><div className="map-summary"><span><MapPin size={18}/><strong>{loading || loadError ? '—' : records.length}</strong> levantamientos</span><span><Scissors size={18}/><strong>{loading || loadError ? '—' : totals.podas}</strong> podas</span><span><Users size={18}/><strong>{loading || loadError ? '—' : totals.cuadrillas}</strong> cuadrillas en levantamientos</span></div></section>
     </div>
     <p className="workspace-footnote">Las cantidades corresponden a los levantamientos del filtro seleccionado.</p>
 
     <Dialog open={catalogOpen} onOpenChange={v => { if (!catalogSaving) setCatalogOpen(v); }}>
-      <DialogContent className="catalog-dialog" showCloseButton={false}><ModalHeading title="Catálogo de ramales" description="Asocia cada ramal con su subestación y sus circuitos." close={() => { if (!catalogSaving) setCatalogOpen(false); }}/>
-        <div className="catalog-grid"><section><h3 className="section-heading">Ramales registrados <span className="count-pill">{ramales.length}</span></h3>{ramalQuery.error ? <p role="alert" className="error-box">No se pudo cargar el catálogo.</p> : ramales.length ? <Table><TableHeader><TableRow><TableHead>Ramal / subestación</TableHead><TableHead>Circuitos</TableHead><TableHead><span className="sr-only">Editar</span></TableHead></TableRow></TableHeader><TableBody>{ramales.map(r => <TableRow key={r.id}><TableCell><strong>{r.nombre}</strong><p className="muted">{r.subestacion}</p></TableCell><TableCell className="catalog-circuits">{r.circuitos.join(', ')}</TableCell><TableCell><Button disabled={catalogSaving} size="icon" variant="ghost" aria-label={'Editar ramal ' + r.nombre} onClick={() => { setRamalDraft({ ...r, circuitos: r.circuitos.join('\n') }); setCatalogError(''); }}><Pencil size={16}/></Button></TableCell></TableRow>)}</TableBody></Table> : <Empty className="catalog-empty"><Network size={32}/><EmptyTitle>Sin ramales registrados</EmptyTitle><EmptyDescription>Captura el primero en el formulario.</EmptyDescription></Empty>}</section>
-        <form onSubmit={submitRamal} className="ramal-form"><h3 className="section-heading">{ramalDraft.id ? 'Editar ramal' : 'Agregar ramal'}</h3><fieldset disabled={catalogSaving}><div className="form-field"><Label htmlFor="ramal-name">Nombre o clave del ramal</Label><Input id="ramal-name" required maxLength={120} value={ramalDraft.nombre} onChange={e => setRamalDraft(d => ({ ...d, nombre: e.target.value }))} placeholder="Nombre del ramal"/></div><div className="form-field"><Label htmlFor="substation">Subestación</Label><Input id="substation" required maxLength={120} value={ramalDraft.subestacion} onChange={e => setRamalDraft(d => ({ ...d, subestacion: e.target.value }))} placeholder="Nombre de la subestación"/></div><div className="form-field"><Label htmlFor="circuits">Circuitos</Label><Textarea id="circuits" required rows={4} maxLength={12100} value={ramalDraft.circuitos} onChange={e => setRamalDraft(d => ({ ...d, circuitos: e.target.value }))} placeholder="Un circuito por línea"/><p className="field-help">Escribe un circuito por línea o sepáralos con comas.</p></div></fieldset>{catalogError && <p role="alert" className="error-box">{catalogError}</p>}<div className="form-actions">{ramalDraft.id && <Button type="button" disabled={catalogSaving} variant="outline" onClick={() => { setRamalDraft({ id: '', nombre: '', subestacion: '', circuitos: '' }); setCatalogError(''); }}>Cancelar edición</Button>}<Button type="submit" disabled={catalogSaving}>{catalogSaving ? 'Guardando…' : 'Guardar ramal'}</Button></div></form></div>
+      <DialogContent className="catalog-dialog" showCloseButton={false}><ModalHeading title="Catálogo de ramales" description="Registra subestación, circuitos, cuadrillas y ubicación del ramal." close={() => { if (!catalogSaving) setCatalogOpen(false); }}/>
+        <div className="catalog-grid"><section><h3 className="section-heading">Ramales registrados <span className="count-pill">{ramales.length}</span></h3>{ramalQuery.error ? <p role="alert" className="error-box">No se pudo cargar el catálogo.</p> : ramales.length ? <Table><TableHeader><TableRow><TableHead>Ramal / subestación</TableHead><TableHead>Circuitos</TableHead><TableHead><span className="sr-only">Editar</span></TableHead></TableRow></TableHeader><TableBody>{ramales.map(r => <TableRow key={r.id}><TableCell><strong>{r.nombre}</strong><p className="muted">{r.subestacion}</p><p className="catalog-location"><MapPin size={14}/>{r.ubicacion || 'Sin ubicación registrada'}</p><p className="muted">{r.cuadrillas ?? 'Sin registrar'} cuadrillas</p>{r.latitud !== null && r.longitud !== null && <p className="coordinates">{r.latitud.toFixed(6)}, {r.longitud.toFixed(6)}</p>}</TableCell><TableCell className="catalog-circuits">{r.circuitos.join(', ')}</TableCell><TableCell><Button disabled={catalogSaving} size="icon" variant="ghost" aria-label={'Editar ramal ' + r.nombre} onClick={() => { setRamalDraft({ ...r, circuitos: r.circuitos.join('\n'), cuadrillas: r.cuadrillas === null ? '' : String(r.cuadrillas), ubicacion: r.ubicacion || '', latitud: r.latitud === null ? '' : String(r.latitud), longitud: r.longitud === null ? '' : String(r.longitud) }); setCatalogError(''); }}><Pencil size={16}/></Button></TableCell></TableRow>)}</TableBody></Table> : <Empty className="catalog-empty"><Network size={32}/><EmptyTitle>Sin ramales registrados</EmptyTitle><EmptyDescription>Captura el primero en el formulario.</EmptyDescription></Empty>}</section>
+        <form onSubmit={submitRamal} className="ramal-form"><h3 className="section-heading">{ramalDraft.id ? 'Editar ramal' : 'Agregar ramal'}</h3><fieldset disabled={catalogSaving}><div className="form-field"><Label htmlFor="ramal-name">Nombre o clave del ramal</Label><Input id="ramal-name" required maxLength={120} value={ramalDraft.nombre} onChange={e => setRamalDraft(d => ({ ...d, nombre: e.target.value }))} placeholder="Nombre del ramal"/></div><div className="form-field"><Label htmlFor="substation">Subestación</Label><Input id="substation" required maxLength={120} value={ramalDraft.subestacion} onChange={e => setRamalDraft(d => ({ ...d, subestacion: e.target.value }))} placeholder="Nombre de la subestación"/></div><div className="form-field"><Label htmlFor="circuits">Circuitos</Label><Textarea id="circuits" required rows={4} maxLength={12100} value={ramalDraft.circuitos} onChange={e => setRamalDraft(d => ({ ...d, circuitos: e.target.value }))} placeholder="Un circuito por línea"/><p className="field-help">Escribe un circuito por línea o sepáralos con comas.</p></div><RamalLocation key={ramalDraft.id + ':' + catalogEpoch} value={ramalDraft} disabled={catalogSaving} onChange={patch => setRamalDraft(d => ({ ...d, ...patch }))}/></fieldset>{catalogError && <p role="alert" className="error-box">{catalogError}</p>}<div className="form-actions">{ramalDraft.id && <Button type="button" disabled={catalogSaving} variant="outline" onClick={() => { setRamalDraft({ id: '', nombre: '', subestacion: '', circuitos: '', cuadrillas: '', ubicacion: '', latitud: '', longitud: '' }); setCatalogError(''); }}>Cancelar edición</Button>}<Button type="submit" disabled={catalogSaving}>{catalogSaving ? 'Guardando…' : 'Guardar ramal'}</Button></div></form></div>
       </DialogContent>
     </Dialog>
 
@@ -160,6 +165,7 @@ function Registry() {
     </Dialog>
   </main>;
 }
+
 
 
 
