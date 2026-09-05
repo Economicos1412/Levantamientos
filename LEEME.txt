@@ -1,8 +1,8 @@
 LEVANTAMIENTOS — VERSIÓN LOCAL
 
-VERSIÓN EN LÍNEA PRIVADA
+VERSIÓN EN LÍNEA PÚBLICA
 https://levantamientos-ricardoyahelt.netlify.app/
-Netlify solicitará iniciar sesión con la cuenta propietaria.
+No requiere iniciar sesión. Cualquier persona que tenga el enlace puede consultar y modificar los registros compartidos de esta versión.
 
 Para abrir: haz doble clic en "Abrir Levantamientos.cmd". El iniciador mantiene activo el servidor local en segundo plano.
 Se abrirá tu navegador en http://localhost:4178/

@@ -1,6 +1,6 @@
 # Levantamientos
 
-Aplicación en español para registrar trabajo de campo y consultarlo por ramal. Está disponible para uso local y en un sitio privado de Netlify. Abrir localmente con `Abrir Levantamientos.cmd`; consultar `LEEME.txt`.
+Aplicación en español para registrar trabajo de campo y consultarlo por ramal. Está disponible para uso local y en el sitio público https://levantamientos-ricardoyahelt.netlify.app/. Abrir localmente con `Abrir Levantamientos.cmd`; consultar `LEEME.txt`.
 
 - Catálogo editable de ramales, subestaciones y circuitos, con selección de cuadrillas, ubicación y coordenadas por ramal.
 - Captura y edición de ubicación, fecha, coordenadas, podas y cuadrillas participantes.
