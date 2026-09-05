@@ -1,6 +1,6 @@
 # Levantamientos
 
-Aplicación en español para registrar trabajo de campo y consultarlo por ramal. Se entrega para uso local, sin publicación, por elección del usuario. Abrir con `Abrir Levantamientos.cmd`; consultar `LEEME.txt`.
+Aplicación en español para registrar trabajo de campo y consultarlo por ramal. Está disponible para uso local y en un sitio privado de Netlify. Abrir localmente con `Abrir Levantamientos.cmd`; consultar `LEEME.txt`.
 
 - Catálogo editable de ramales, subestaciones y circuitos, con selección de cuadrillas, ubicación y coordenadas por ramal.
 - Captura y edición de ubicación, fecha, coordenadas, podas y cuadrillas participantes.
@@ -14,11 +14,15 @@ Instalar con `npm ci` y ejecutar `npm run dev`. La base local usa la vinculació
 
 Compilar con `npm run build`. Validar tipos con `npx tsc --noEmit`.
 
+La salida para Netlify se compila con `npm run build:netlify`. Usa Netlify Functions para las rutas `/api/ramales` y `/api/levantamientos`, y Netlify Blobs con consistencia fuerte para conservar los registros entre publicaciones.
+
 ## Datos y mapa
 
 No se incluyen registros de ejemplo. Cada ramal tiene una subestación y uno o varios circuitos; cada levantamiento pertenece a un circuito de ese ramal. No se puede retirar del catálogo un circuito que todavía tenga levantamientos asociados.
 
 Las cuadrillas se identifican por clave: Q52 a Q58 pertenecen al área urbana y Q62 a Q68 al área rural. Cada ramal define sus cuadrillas asignadas y cada levantamiento permite elegir entre ellas. El mapa muestra puntos de levantamiento, no el trazado de las líneas eléctricas. Usa Leaflet y las teselas estándar de OpenStreetMap con atribución visible. Requiere conexión para cargar las teselas; no descarga mapas para uso fuera de línea. La geolocalización requiere HTTPS y autorización del navegador, y siempre admite captura manual.
+
+Los datos locales y los datos de Netlify son independientes. La publicación en Netlify comenzó vacía para no transferir registros locales sin una migración solicitada.
 
 ## Validación
 

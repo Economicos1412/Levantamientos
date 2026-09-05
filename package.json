@@ -7,7 +7,9 @@
   },
   "scripts": {
     "dev": "vinext dev",
+    "dev:netlify": "vite --config vite.netlify.config.ts --host 127.0.0.1 --port 5174",
     "build": "vinext build",
+    "build:netlify": "vite build --config vite.netlify.config.ts",
     "start": "wrangler dev --config dist/server/wrangler.json",
     "lint": "oxlint",
     "format": "oxfmt",
@@ -15,6 +17,7 @@
   },
   "dependencies": {
     "@base-ui/react": "1.7.0",
+    "@netlify/blobs": "^11.0.3",
     "@shadcn/react": "0.3.0",
     "@tanstack/react-query": "^5.102.8",
     "class-variance-authority": "0.7.1",
@@ -49,6 +52,7 @@
     "@vitejs/plugin-react": "6.0.2",
     "@vitejs/plugin-rsc": "0.5.34",
     "drizzle-kit": "0.31.10",
+    "netlify-cli": "^27.5.0",
     "oxfmt": "0.61.0",
     "oxlint": "1.76.0",
     "oxlint-tsgolint": "7.0.2001",
