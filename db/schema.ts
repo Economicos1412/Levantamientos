@@ -7,6 +7,7 @@ export const ramales = sqliteTable('ramales', {
   subestacion: text('subestacion').notNull(),
   circuitos: text('circuitos').notNull(),
   cuadrillas: integer('cuadrillas'),
+  cuadrillasDetalle: text('cuadrillas_detalle'),
   ubicacion: text('ubicacion'),
   latitud: real('latitud'),
   longitud: real('longitud'),
@@ -22,6 +23,7 @@ export const levantamientos = sqliteTable('levantamientos', {
   longitud: real('longitud').notNull(),
   podas: integer('podas').notNull(),
   cuadrillas: integer('cuadrillas').notNull(),
+  cuadrillasDetalle: text('cuadrillas_detalle'),
   fecha: text('fecha').notNull(),
   createdAt: text('created_at').notNull(),
 }, (t) => [index('idx_levantamientos_ramal_fecha').on(t.ramalId, t.fecha)]);

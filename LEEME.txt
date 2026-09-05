@@ -3,9 +3,9 @@ LEVANTAMIENTOS — VERSIÓN LOCAL
 Para abrir: haz doble clic en "Abrir Levantamientos.cmd". El iniciador mantiene activo el servidor local en segundo plano.
 Se abrirá tu navegador en http://localhost:4178/
 
-1. Abre "Catálogo de ramales" y captura el nombre del ramal, su subestación, circuitos, número de cuadrillas, ubicación y coordenadas. Puedes usar tu ubicación o marcar el mapa.
+1. Abre "Catálogo de ramales" y captura el nombre del ramal, su subestación y circuitos. Selecciona sus cuadrillas: Q52 a Q58 son del área urbana y Q62 a Q68 son del área rural. Agrega la ubicación y coordenadas; puedes usar tu ubicación o marcar el mapa.
 2. Selecciona el ramal y pulsa "Nuevo levantamiento".
-3. Captura circuito, ubicación, fecha, número de podas y número de cuadrillas.
+3. Captura circuito, ubicación, fecha y número de podas. Después selecciona cuáles de las cuadrillas asignadas al ramal participaron.
 4. Usa tu ubicación, escribe las coordenadas o marca el punto en el mapa.
 5. Guarda el levantamiento. El filtro por ramal actualiza la lista y el mapa.
 

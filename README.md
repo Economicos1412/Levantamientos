@@ -2,8 +2,8 @@
 
 Aplicación en español para registrar trabajo de campo y consultarlo por ramal. Se entrega para uso local, sin publicación, por elección del usuario. Abrir con `Abrir Levantamientos.cmd`; consultar `LEEME.txt`.
 
-- Catálogo editable de ramales, subestaciones y circuitos, con número de cuadrillas, ubicación y coordenadas por ramal.
-- Captura y edición de ubicación, fecha, coordenadas, podas y número de cuadrillas.
+- Catálogo editable de ramales, subestaciones y circuitos, con selección de cuadrillas, ubicación y coordenadas por ramal.
+- Captura y edición de ubicación, fecha, coordenadas, podas y cuadrillas participantes.
 - Filtro por ramal que actualiza los registros y el mapa.
 - Geolocalización mediante permiso del dispositivo, coordenadas manuales o selección de un punto en el mapa.
 - Persistencia en SQLite mediante D1 local, en `.wrangler/state`. El servidor escucha únicamente en `127.0.0.1` y se abre en `http://localhost:4178/`.
@@ -18,10 +18,10 @@ Compilar con `npm run build`. Validar tipos con `npx tsc --noEmit`.
 
 No se incluyen registros de ejemplo. Cada ramal tiene una subestación y uno o varios circuitos; cada levantamiento pertenece a un circuito de ese ramal. No se puede retirar del catálogo un circuito que todavía tenga levantamientos asociados.
 
-Las cuadrillas representan cantidades por levantamiento. Su suma no identifica cuadrillas únicas. El mapa muestra puntos de levantamiento, no el trazado de las líneas eléctricas. Usa Leaflet y las teselas estándar de OpenStreetMap con atribución visible. Requiere conexión para cargar las teselas; no descarga mapas para uso fuera de línea. La geolocalización requiere HTTPS y autorización del navegador, y siempre admite captura manual.
+Las cuadrillas se identifican por clave: Q52 a Q58 pertenecen al área urbana y Q62 a Q68 al área rural. Cada ramal define sus cuadrillas asignadas y cada levantamiento permite elegir entre ellas. El mapa muestra puntos de levantamiento, no el trazado de las líneas eléctricas. Usa Leaflet y las teselas estándar de OpenStreetMap con atribución visible. Requiere conexión para cargar las teselas; no descarga mapas para uso fuera de línea. La geolocalización requiere HTTPS y autorización del navegador, y siempre admite captura manual.
 
 ## Validación
 
-Se comprobaron mediante HTTP local la creación, lectura, edición, filtrado entre dos ramales, persistencia por lectura posterior, cero como coordenada/cantidad válida, nombre duplicado, circuitos duplicados, asociación de circuito, protección de circuitos usados, coordenadas fuera de rango, fecha imposible, cantidades negativas o fraccionarias y registro inexistente. Los registros de prueba se retiraron de la base local. El filtro usa el índice compuesto por ramal y fecha.
+Se comprobaron mediante HTTP local la creación y lectura de ramales y levantamientos con cuadrillas identificadas, el cálculo de su cantidad y el rechazo de una cuadrilla no asignada al ramal. Los registros de prueba se retiraron de la base local. El filtro usa el índice compuesto por ramal y fecha.
 
-No se realizaron pruebas visuales ni de permisos GPS en un navegador. La integración WebMCP es opcional y no pudo validarse en un contexto compatible; no afecta al uso manual de la aplicación. Los controles expuestos reutilizan las mismas validaciones y persistencia que la interfaz.
+Se revisó visualmente en el navegador local el selector agrupado por área. No se autorizó el permiso GPS durante la prueba. La integración WebMCP expone las mismas claves válidas y reutiliza las validaciones y persistencia de la interfaz.
