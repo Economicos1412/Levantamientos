@@ -1,6 +1,6 @@
 LEVANTAMIENTOS — VERSIÓN LOCAL
 
-Para abrir: haz doble clic en "Abrir Levantamientos.cmd".
+Para abrir: haz doble clic en "Abrir Levantamientos.cmd". El iniciador mantiene activo el servidor local en segundo plano.
 Se abrirá tu navegador en http://localhost:4178/
 
 1. Abre "Catálogo de ramales" y captura el nombre del ramal, su subestación, circuitos, número de cuadrillas, ubicación y coordenadas. Puedes usar tu ubicación o marcar el mapa.
