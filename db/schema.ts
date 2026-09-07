@@ -27,3 +27,13 @@ export const levantamientos = sqliteTable('levantamientos', {
   fecha: text('fecha').notNull(),
   createdAt: text('created_at').notNull(),
 }, (t) => [index('idx_levantamientos_ramal_fecha').on(t.ramalId, t.fecha)]);
+
+export const rutas = sqliteTable('rutas', {
+  id: text('id').primaryKey(),
+  ramalId: text('ramal_id').notNull().references(() => ramales.id, { onDelete: 'cascade' }),
+  origenLatitud: real('origen_latitud').notNull(),
+  origenLongitud: real('origen_longitud').notNull(),
+  destinoLatitud: real('destino_latitud').notNull(),
+  destinoLongitud: real('destino_longitud').notNull(),
+  createdAt: text('created_at').notNull(),
+}, (t) => [index('idx_rutas_ramal_created').on(t.ramalId, t.createdAt)]);

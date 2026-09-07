@@ -1,7 +1,8 @@
-import type { Levantamiento, Ramal } from '@/lib/records';
+import type { Levantamiento, Ramal, RutaGuardada } from '@/lib/records';
 
 export type StoredRamal = Ramal & { createdAt: string };
 export type StoredLevantamiento = Omit<Levantamiento, 'ramal' | 'subestacion'> & { createdAt: string };
+export type StoredRuta = Omit<RutaGuardada, 'ramal' | 'subestacion' | 'ubicacion'>;
 
 type RamalRow = {
   id: string; nombre: string; subestacion: string; circuitos: string[]; cuadrillas_seleccionadas: string[];
@@ -10,6 +11,10 @@ type RamalRow = {
 type LevantamientoRow = {
   id: string; ramal_id: string; circuito: string; ubicacion: string; latitud: number; longitud: number;
   podas: number; cuadrillas_seleccionadas: string[]; fecha: string; created_at: string;
+};
+type RutaRow = {
+  id: string; ramal_id: string; origen_latitud: number; origen_longitud: number;
+  destino_latitud: number; destino_longitud: number; created_at: string;
 };
 
 function connection() {
@@ -42,6 +47,7 @@ function fromLevantamiento(row: LevantamientoRow): StoredLevantamiento {
 }
 const ramalColumns = 'id,nombre,subestacion,circuitos,cuadrillas_seleccionadas,ubicacion,latitud,longitud,created_at';
 const levantamientoColumns = 'id,ramal_id,circuito,ubicacion,latitud,longitud,podas,cuadrillas_seleccionadas,fecha,created_at';
+const rutaColumns = 'id,ramal_id,origen_latitud,origen_longitud,destino_latitud,destino_longitud,created_at';
 
 export async function listRamales() {
   return (await query<RamalRow[]>(`ramales?select=${ramalColumns}&order=nombre.asc`)).map(fromRamal);
@@ -82,4 +88,12 @@ export async function createLevantamiento(record: StoredLevantamiento) {
 export async function updateLevantamiento(record: StoredLevantamiento) {
   const rows = await query<LevantamientoRow[]>(`levantamientos?id=eq.${encodeURIComponent(record.id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(toLevantamientoRow(record)) });
   return rows[0] ? fromLevantamiento(rows[0]) : null;
+}
+export async function listRutas() {
+  return (await query<RutaRow[]>(`rutas?select=${rutaColumns}&order=created_at.desc`)).map(row => ({ id: row.id, ramalId: row.ramal_id, origenLatitud: row.origen_latitud, origenLongitud: row.origen_longitud, destinoLatitud: row.destino_latitud, destinoLongitud: row.destino_longitud, createdAt: row.created_at }));
+}
+export async function createRuta(route: StoredRuta) {
+  const rows = await query<RutaRow[]>('rutas', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ id: route.id, ramal_id: route.ramalId, origen_latitud: route.origenLatitud, origen_longitud: route.origenLongitud, destino_latitud: route.destinoLatitud, destino_longitud: route.destinoLongitud, created_at: route.createdAt }) });
+  const row = rows[0];
+  return { id: row.id, ramalId: row.ramal_id, origenLatitud: row.origen_latitud, origenLongitud: row.origen_longitud, destinoLatitud: row.destino_latitud, destinoLongitud: row.destino_longitud, createdAt: row.created_at };
 }

@@ -12,6 +12,7 @@ Se abrirá tu navegador en http://localhost:4178/
 3. Captura circuito, ubicación, fecha y número de podas. Después selecciona cuáles de las cuadrillas asignadas al ramal participaron.
 4. Usa tu ubicación, escribe las coordenadas o marca el punto en el mapa.
 5. Guarda el levantamiento. El filtro por ramal actualiza la lista y el mapa.
+6. Selecciona un ramal y pulsa "Iniciar ruta". El programa guardará el punto de salida y abrirá la navegación. Usa "Rutas guardadas" para volver a abrirla después.
 
 Puedes corregir ramales y levantamientos con el botón del lápiz.
 Puedes quitar un ramal con el botón de la papelera. El programa pedirá confirmación y protegerá los ramales que todavía tengan levantamientos asociados.

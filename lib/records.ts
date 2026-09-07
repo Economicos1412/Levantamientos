@@ -4,6 +4,8 @@ export const ALL_CREWS = [...URBAN_CREWS, ...RURAL_CREWS] as const;
 
 export type Ramal = { id: string; nombre: string; subestacion: string; circuitos: string[]; cuadrillas: number | null; cuadrillasSeleccionadas: string[]; ubicacion: string | null; latitud: number | null; longitud: number | null };
 export type Levantamiento = { id: string; ramalId: string; circuito: string; ubicacion: string; latitud: number; longitud: number; podas: number; cuadrillas: number; cuadrillasSeleccionadas: string[]; fecha: string; ramal: string; subestacion: string };
+export type RutaGuardada = { id: string; ramalId: string; ramal: string; subestacion: string; ubicacion: string; origenLatitud: number; origenLongitud: number; destinoLatitud: number; destinoLongitud: number; createdAt: string };
+export type RouteInput = Pick<RutaGuardada, 'ramalId' | 'origenLatitud' | 'origenLongitud'>;
 export type RecordInput = Omit<Levantamiento, 'id' | 'ramal' | 'subestacion' | 'cuadrillas'>;
 export type RamalInput = Omit<Ramal, 'id' | 'cuadrillas' | 'ubicacion' | 'latitud' | 'longitud'> & { ubicacion: string; latitud: number; longitud: number };
 export class InputError extends Error {}
@@ -55,5 +57,14 @@ export function validateRecord(value: unknown): RecordInput {
   const fecha = text(v.fecha, 'Fecha', 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha) || !Number.isFinite(Date.parse(fecha)) || new Date(fecha).toISOString().slice(0, 10) !== fecha) throw new InputError('La fecha no es válida.');
   return { ramalId: text(v.ramalId, 'Ramal', 36), circuito: text(v.circuito, 'Circuito'), ubicacion: text(v.ubicacion, 'Ubicación', 500), latitud: number('latitud', -90, 90), longitud: number('longitud', -180, 180), podas: number('podas', 0, 1000000, true), cuadrillasSeleccionadas: validateCrewSelection(v.cuadrillasSeleccionadas), fecha };
+}
+export function validateRoute(value: unknown): RouteInput {
+  const v = obj(value);
+  const coordinate = (key: 'origenLatitud' | 'origenLongitud', max: number) => {
+    const n = v[key];
+    if (typeof n !== 'number' || !Number.isFinite(n) || Math.abs(n) > max) throw new InputError(`${key}: ingresa una coordenada válida.`);
+    return n;
+  };
+  return { ramalId: text(v.ramalId, 'Ramal', 36), origenLatitud: coordinate('origenLatitud', 90), origenLongitud: coordinate('origenLongitud', 180) };
 }
 export function localDate() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }

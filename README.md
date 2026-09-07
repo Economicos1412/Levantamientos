@@ -7,6 +7,7 @@ Aplicación en español para registrar trabajo de campo y consultarlo por ramal.
 - Filtro por ramal que actualiza los registros y el mapa.
 - Geolocalización mediante permiso del dispositivo, coordenadas manuales o selección de un punto en el mapa.
 - Seguimiento en vivo de la ubicación del usuario en el mapa principal mientras la página permanece abierta.
+- Inicio de navegación hacia un ramal y consulta posterior de las rutas guardadas, con punto de salida, destino y fecha.
 - Persistencia en SQLite mediante D1 local, en `.wrangler/state`. El servidor escucha únicamente en `127.0.0.1` y se abre en `http://localhost:4178/`.
 
 ## Desarrollo
@@ -15,7 +16,7 @@ Instalar con `npm ci` y ejecutar `npm run dev`. La base local usa la vinculació
 
 Compilar con `npm run build`. Validar tipos con `npx tsc --noEmit`.
 
-La salida para Netlify se compila con `npm run build:netlify`. Usa Netlify Functions para las rutas `/api/ramales` y `/api/levantamientos`, y Supabase PostgreSQL para conservar los registros entre publicaciones. Ejecuta `supabase/schema.sql` una vez en el SQL Editor de Supabase y configura `SUPABASE_URL` y `SUPABASE_SECRET_KEY` como variables protegidas de Netlify.
+La salida para Netlify se compila con `npm run build:netlify`. Usa Netlify Functions para las rutas `/api/ramales`, `/api/levantamientos` y `/api/rutas`, y Supabase PostgreSQL para conservar los registros entre publicaciones. Ejecuta `supabase/schema.sql` una vez en el SQL Editor de Supabase y configura `SUPABASE_URL` y `SUPABASE_SECRET_KEY` como variables protegidas de Netlify.
 
 ## Datos y mapa
 

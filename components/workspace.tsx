@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Network, MapPin, Pencil, LocateFixed, Scissors, Users, X, Building2, RefreshCw, Trash2 } from 'lucide-react';
+import { Plus, Network, MapPin, Pencil, LocateFixed, Scissors, Users, X, Building2, RefreshCw, Trash2, Navigation, Route } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import FieldMap from './field-map';
 import RamalLocation from './ramal-location';
 import CrewSelector from './crew-selector';
-import { ALL_CREWS, crewLabel, localDate, validateRamal, validateRecord, type Levantamiento, type Ramal, type RecordInput, type RamalInput } from '@/lib/records';
+import { ALL_CREWS, crewLabel, localDate, validateRamal, validateRecord, type Levantamiento, type Ramal, type RecordInput, type RamalInput, type RutaGuardada } from '@/lib/records';
 
 async function request<T>(path: string, method = 'GET', data?: unknown): Promise<T> {
   const response = await fetch(path, { method, cache: 'no-store', headers: data ? { 'Content-Type': 'application/json' } : {}, body: data ? JSON.stringify(data) : undefined });
@@ -34,6 +34,7 @@ function ModalHeading({ title, description, close }: { title: string; descriptio
 }
 const emptyRamales: Ramal[] = [];
 const emptyRecords: Levantamiento[] = [];
+const emptyRoutes: RutaGuardada[] = [];
 type Draft = { id?: string; ramalId: string; circuito: string; ubicacion: string; latitud: string; longitud: string; podas: string; cuadrillasSeleccionadas: string[]; legacyCuadrillas?: number; fecha: string };
 type RamalDraft = { id: string; nombre: string; subestacion: string; circuitos: string; cuadrillasSeleccionadas: string[]; legacyCuadrillas?: number | null; ubicacion: string; latitud: string; longitud: string };
 const newRamalDraft = (): RamalDraft => ({ id: '', nombre: '', subestacion: '', circuitos: '', cuadrillasSeleccionadas: [], ubicacion: '', latitud: '', longitud: '' });
@@ -60,10 +61,15 @@ function Registry() {
   const [deleteTarget, setDeleteTarget] = useState<Ramal | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [routesOpen, setRoutesOpen] = useState(false);
+  const [routeSavingId, setRouteSavingId] = useState('');
+  const [routeError, setRouteError] = useState('');
   const ramalQuery = useQuery({ queryKey: ['ramales'], queryFn: () => request<Ramal[]>('/api/ramales') });
   const recordsQuery = useQuery({ queryKey: ['levantamientos', filter], queryFn: () => request<Levantamiento[]>('/api/levantamientos' + (filter === 'all' ? '' : '?ramal=' + encodeURIComponent(filter))) });
+  const routesQuery = useQuery({ queryKey: ['rutas'], queryFn: () => request<RutaGuardada[]>('/api/rutas'), enabled: routesOpen });
   const ramales = ramalQuery.data || emptyRamales;
   const records = recordsQuery.data || emptyRecords;
+  const routes = routesQuery.data || emptyRoutes;
   const activeRamal = ramales.find(r => r.id === filter);
   const visibleRamales = useMemo(() => filter === 'all' ? ramales : ramales.filter(r => r.id === filter), [ramales, filter]);
   const formRamal = ramales.find(r => r.id === draft?.ramalId);
@@ -142,6 +148,27 @@ function Registry() {
       setLocating(false);
     }, e => { setLocating(false); setSaveError(e.code === 1 ? 'No se autorizó la ubicación. Puedes escribir las coordenadas o marcar el mapa.' : 'No se pudo obtener tu ubicación. Intenta de nuevo o marca el mapa.'); }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
   }
+  const directionsUrl = (route: Pick<RutaGuardada, 'origenLatitud' | 'origenLongitud' | 'destinoLatitud' | 'destinoLongitud'>) => `https://www.google.com/maps/dir/?api=1&origin=${route.origenLatitud},${route.origenLongitud}&destination=${route.destinoLatitud},${route.destinoLongitud}&travelmode=driving`;
+  function useSavedRoute(route: RutaGuardada) {
+    const tab = window.open(directionsUrl(route), '_blank', 'noopener,noreferrer');
+    if (!tab) window.location.assign(directionsUrl(route));
+  }
+  async function startRoute(ramal: Ramal) {
+    if (ramal.latitud === null || ramal.longitud === null) { setRouteError('Este ramal no tiene una georreferencia válida.'); return; }
+    if (!navigator.geolocation) { setRouteError('Este dispositivo no ofrece geolocalización para iniciar la ruta.'); return; }
+    setRouteSavingId(ramal.id); setRouteError(''); setSaved('');
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }));
+      const route = await request<RutaGuardada>('/api/rutas', 'POST', { ramalId: ramal.id, origenLatitud: position.coords.latitude, origenLongitud: position.coords.longitude });
+      await client.invalidateQueries({ queryKey: ['rutas'] });
+      setSaved(`Ruta a ${ramal.nombre} guardada.`);
+      const tab = window.open(directionsUrl(route), '_blank', 'noopener,noreferrer');
+      if (!tab) window.location.assign(directionsUrl(route));
+    } catch (error) {
+      const issue = error as GeolocationPositionError;
+      setRouteError(issue?.code === 1 ? 'Autoriza tu ubicación para iniciar y guardar la ruta.' : error instanceof Error ? error.message : 'No se pudo iniciar la ruta.');
+    } finally { setRouteSavingId(''); }
+  }
 
   useEffect(() => {
     const context = (document as Document & { modelContext?: Context }).modelContext;
@@ -154,11 +181,12 @@ function Registry() {
   }, [client]);
 
   return <main className="workspace">
-    <div className="page-heading"><div><p className="eyebrow">OPERACIÓN EN CAMPO</p><h2>Registro de levantamientos</h2></div><div className="heading-actions"><Button variant="outline" onClick={() => { setCatalogError(''); setCatalogOpen(true); }}><Network/> Catálogo de ramales</Button><Button onClick={newRecord} disabled={loading || !!loadError}><Plus/> Nuevo levantamiento</Button></div></div>
+    <div className="page-heading"><div><p className="eyebrow">OPERACIÓN EN CAMPO</p><h2>Registro de levantamientos</h2></div><div className="heading-actions"><Button variant="outline" onClick={() => { setRouteError(''); setRoutesOpen(true); }}><Route/> Rutas guardadas</Button><Button variant="outline" onClick={() => { setCatalogError(''); setCatalogOpen(true); }}><Network/> Catálogo de ramales</Button><Button onClick={newRecord} disabled={loading || !!loadError}><Plus/> Nuevo levantamiento</Button></div></div>
     {saved && <p role="status" className="success-note">{saved}</p>}
+    {routeError && <p role="alert" className="error-box">{routeError}</p>}
     {loadError && <div role="alert" className="error-box">No se pudieron cargar los registros. <Button variant="outline" onClick={() => void refresh()}><RefreshCw/> Reintentar</Button></div>}
     <section className="filter-bar" aria-label="Filtro por ramal"><div className="filter-select"><Label htmlFor="filter-ramal">Ramal</Label><Choice id="filter-ramal" value={filter} onChange={changeFilter} options={[{ value: 'all', label: 'Todos los ramales' }, ...ramalOptions]}/></div><div className="ramal-context"><div><span className="context-label"><Building2 size={15}/> Subestación</span><strong>{activeRamal?.subestacion || (filter === 'all' ? 'Todas las subestaciones' : '—')}</strong></div><div><span className="context-label"><Network size={15}/> Circuitos</span><div className="circuit-tags">{activeRamal ? activeRamal.circuitos.map(c => <span key={c} className="circuit-tag">{c}</span>) : <span className="muted">Selecciona un ramal para ver sus circuitos</span>}</div></div></div></section>
-    {activeRamal && <section className="ramal-details" aria-label="Ubicación y cuadrillas del ramal"><div><span className="context-label"><MapPin size={15}/> Ubicación del ramal</span><strong>{activeRamal.ubicacion || 'Sin ubicación registrada'}</strong>{activeRamal.latitud !== null && activeRamal.longitud !== null && <p className="coordinates">{activeRamal.latitud.toFixed(6)}, {activeRamal.longitud.toFixed(6)}</p>}</div><div><span className="context-label"><Users size={15}/> Cuadrillas del ramal</span><strong>{crewLabel(activeRamal.cuadrillasSeleccionadas, activeRamal.cuadrillas)}</strong></div></section>}
+    {activeRamal && <section className="ramal-details" aria-label="Ubicación, cuadrillas y ruta del ramal"><div><span className="context-label"><MapPin size={15}/> Ubicación del ramal</span><strong>{activeRamal.ubicacion || 'Sin ubicación registrada'}</strong>{activeRamal.latitud !== null && activeRamal.longitud !== null && <p className="coordinates">{activeRamal.latitud.toFixed(6)}, {activeRamal.longitud.toFixed(6)}</p>}</div><div><span className="context-label"><Users size={15}/> Cuadrillas del ramal</span><strong>{crewLabel(activeRamal.cuadrillasSeleccionadas, activeRamal.cuadrillas)}</strong></div><div className="route-action"><Button disabled={!!routeSavingId} onClick={() => void startRoute(activeRamal)}><Navigation/>{routeSavingId === activeRamal.id ? 'Preparando ruta…' : 'Iniciar ruta'}</Button><span>Se guardará para volver a usarla.</span></div></section>}
     <div className="work-grid">
       <section className="records-panel" aria-label="Levantamientos registrados">
         <div className="panel-title"><h3>Levantamientos</h3><span className="count-pill">{loading || loadError ? '—' : records.length}</span></div>
@@ -173,8 +201,14 @@ function Registry() {
 
     <Dialog open={catalogOpen} onOpenChange={v => { if (!catalogSaving) setCatalogOpen(v); }}>
       <DialogContent className="catalog-dialog" showCloseButton={false}><ModalHeading title="Catálogo de ramales" description="Registra subestación, circuitos, cuadrillas y ubicación del ramal." close={() => { if (!catalogSaving) setCatalogOpen(false); }}/>
-        <div className="catalog-grid"><section><h3 className="section-heading">Ramales registrados <span className="count-pill">{ramales.length}</span></h3>{ramalQuery.error ? <p role="alert" className="error-box">No se pudo cargar el catálogo.</p> : ramales.length ? <Table><TableHeader><TableRow><TableHead>Ramal / subestación</TableHead><TableHead>Circuitos</TableHead><TableHead><span className="sr-only">Acciones</span></TableHead></TableRow></TableHeader><TableBody>{ramales.map(r => <TableRow key={r.id}><TableCell><strong>{r.nombre}</strong><p className="muted">{r.subestacion}</p><p className="catalog-location"><MapPin size={14}/>{r.ubicacion || 'Sin ubicación registrada'}</p><p className="muted">Cuadrillas: {crewLabel(r.cuadrillasSeleccionadas, r.cuadrillas)}</p>{r.latitud !== null && r.longitud !== null && <p className="coordinates">{r.latitud.toFixed(6)}, {r.longitud.toFixed(6)}</p>}</TableCell><TableCell className="catalog-circuits">{r.circuitos.join(', ')}</TableCell><TableCell><div className="catalog-actions"><Button disabled={catalogSaving || deleting} size="icon" variant="ghost" aria-label={'Editar ramal ' + r.nombre} onClick={() => { setRamalDraft({ id: r.id, nombre: r.nombre, subestacion: r.subestacion, circuitos: r.circuitos.join('\n'), cuadrillasSeleccionadas: r.cuadrillasSeleccionadas, legacyCuadrillas: r.cuadrillas, ubicacion: r.ubicacion || '', latitud: r.latitud === null ? '' : String(r.latitud), longitud: r.longitud === null ? '' : String(r.longitud) }); setCatalogError(''); }}><Pencil size={16}/></Button><Button disabled={catalogSaving || deleting} size="icon" variant="ghost" className="delete-button" aria-label={'Quitar ramal ' + r.nombre} onClick={() => { setCatalogError(''); setDeleteTarget(r); }}><Trash2 size={16}/></Button></div></TableCell></TableRow>)}</TableBody></Table> : <Empty className="catalog-empty"><Network size={32}/><EmptyTitle>Sin ramales registrados</EmptyTitle><EmptyDescription>Captura el primero en el formulario.</EmptyDescription></Empty>}</section>
+        <div className="catalog-grid"><section><h3 className="section-heading">Ramales registrados <span className="count-pill">{ramales.length}</span></h3>{ramalQuery.error ? <p role="alert" className="error-box">No se pudo cargar el catálogo.</p> : ramales.length ? <Table><TableHeader><TableRow><TableHead>Ramal / subestación</TableHead><TableHead>Circuitos</TableHead><TableHead><span className="sr-only">Acciones</span></TableHead></TableRow></TableHeader><TableBody>{ramales.map(r => <TableRow key={r.id}><TableCell><strong>{r.nombre}</strong><p className="muted">{r.subestacion}</p><p className="catalog-location"><MapPin size={14}/>{r.ubicacion || 'Sin ubicación registrada'}</p><p className="muted">Cuadrillas: {crewLabel(r.cuadrillasSeleccionadas, r.cuadrillas)}</p>{r.latitud !== null && r.longitud !== null && <p className="coordinates">{r.latitud.toFixed(6)}, {r.longitud.toFixed(6)}</p>}</TableCell><TableCell className="catalog-circuits">{r.circuitos.join(', ')}</TableCell><TableCell><div className="catalog-actions"><Button disabled={catalogSaving || deleting || !!routeSavingId} size="icon" variant="ghost" aria-label={'Iniciar ruta a ' + r.nombre} onClick={() => { setCatalogOpen(false); void startRoute(r); }}><Navigation size={16}/></Button><Button disabled={catalogSaving || deleting} size="icon" variant="ghost" aria-label={'Editar ramal ' + r.nombre} onClick={() => { setRamalDraft({ id: r.id, nombre: r.nombre, subestacion: r.subestacion, circuitos: r.circuitos.join('\n'), cuadrillasSeleccionadas: r.cuadrillasSeleccionadas, legacyCuadrillas: r.cuadrillas, ubicacion: r.ubicacion || '', latitud: r.latitud === null ? '' : String(r.latitud), longitud: r.longitud === null ? '' : String(r.longitud) }); setCatalogError(''); }}><Pencil size={16}/></Button><Button disabled={catalogSaving || deleting} size="icon" variant="ghost" className="delete-button" aria-label={'Quitar ramal ' + r.nombre} onClick={() => { setCatalogError(''); setDeleteTarget(r); }}><Trash2 size={16}/></Button></div></TableCell></TableRow>)}</TableBody></Table> : <Empty className="catalog-empty"><Network size={32}/><EmptyTitle>Sin ramales registrados</EmptyTitle><EmptyDescription>Captura el primero en el formulario.</EmptyDescription></Empty>}</section>
         <form onSubmit={submitRamal} className="ramal-form"><h3 className="section-heading">{ramalDraft.id ? 'Editar ramal' : 'Agregar ramal'}</h3><fieldset disabled={catalogSaving}><div className="form-field"><Label htmlFor="ramal-name">Nombre o clave del ramal</Label><Input id="ramal-name" required maxLength={120} value={ramalDraft.nombre} onChange={e => setRamalDraft(d => ({ ...d, nombre: e.target.value }))} placeholder="Nombre del ramal"/></div><div className="form-field"><Label htmlFor="substation">Subestación</Label><Input id="substation" required maxLength={120} value={ramalDraft.subestacion} onChange={e => setRamalDraft(d => ({ ...d, subestacion: e.target.value }))} placeholder="Nombre de la subestación"/></div><div className="form-field"><Label htmlFor="circuits">Circuitos</Label><Textarea id="circuits" required rows={4} maxLength={12100} value={ramalDraft.circuitos} onChange={e => setRamalDraft(d => ({ ...d, circuitos: e.target.value }))} placeholder="Un circuito por línea"/><p className="field-help">Escribe un circuito por línea o sepáralos con comas.</p></div><CrewSelector idPrefix="ramal-crew" value={ramalDraft.cuadrillasSeleccionadas} legacyCount={ramalDraft.legacyCuadrillas} disabled={catalogSaving} onChange={cuadrillasSeleccionadas => setRamalDraft(d => ({ ...d, cuadrillasSeleccionadas }))}/><RamalLocation key={ramalDraft.id + ':' + catalogEpoch} value={ramalDraft} disabled={catalogSaving} onChange={patch => setRamalDraft(d => ({ ...d, ...patch }))}/></fieldset>{catalogError && <p role="alert" className="error-box">{catalogError}</p>}<div className="form-actions">{ramalDraft.id && <Button type="button" disabled={catalogSaving} variant="outline" onClick={() => { setRamalDraft(newRamalDraft()); setCatalogError(''); }}>Cancelar edición</Button>}<Button type="submit" disabled={catalogSaving}>{catalogSaving ? 'Guardando…' : 'Guardar ramal'}</Button></div></form></div>
+      </DialogContent>
+    </Dialog>
+
+    <Dialog open={routesOpen} onOpenChange={setRoutesOpen}>
+      <DialogContent className="routes-dialog" showCloseButton={false}><ModalHeading title="Rutas guardadas" description="Vuelve a abrir una ruta desde el punto donde la iniciaste hasta el ramal." close={() => setRoutesOpen(false)}/>
+        {routesQuery.isPending ? <div className="loading-list" aria-label="Cargando rutas"><Skeleton className="h-24"/><Skeleton className="h-24"/></div> : routesQuery.error ? <p role="alert" className="error-box">No se pudieron cargar las rutas guardadas.</p> : routes.length ? <div className="route-list">{routes.map(route => <article className="route-card" key={route.id}><div className="route-icon"><Navigation/></div><div><h3>{route.ramal}</h3><p>{route.ubicacion} · {route.subestacion}</p><time dateTime={route.createdAt}>Guardada el {new Date(route.createdAt).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}</time><span className="coordinates">Salida: {route.origenLatitud.toFixed(6)}, {route.origenLongitud.toFixed(6)}</span></div><Button onClick={() => useSavedRoute(route)}><Navigation/> Usar ruta</Button></article>)}</div> : <Empty className="routes-empty"><Route size={38}/><EmptyTitle>Aún no hay rutas guardadas</EmptyTitle><EmptyDescription>Selecciona un ramal y pulsa Iniciar ruta.</EmptyDescription></Empty>}
       </DialogContent>
     </Dialog>
 

@@ -29,9 +29,24 @@ create table if not exists public.levantamientos (
 
 create index if not exists levantamientos_ramal_fecha on public.levantamientos (ramal_id, fecha desc, created_at desc);
 
+create table if not exists public.rutas (
+  id uuid primary key default gen_random_uuid(),
+  ramal_id uuid not null references public.ramales(id) on delete cascade,
+  origen_latitud double precision not null check (origen_latitud between -90 and 90),
+  origen_longitud double precision not null check (origen_longitud between -180 and 180),
+  destino_latitud double precision not null check (destino_latitud between -90 and 90),
+  destino_longitud double precision not null check (destino_longitud between -180 and 180),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists rutas_ramal_created on public.rutas (ramal_id, created_at desc);
+
 alter table public.ramales enable row level security;
 alter table public.levantamientos enable row level security;
+alter table public.rutas enable row level security;
 revoke all on public.ramales from anon, authenticated;
 revoke all on public.levantamientos from anon, authenticated;
+revoke all on public.rutas from anon, authenticated;
 grant select, insert, update, delete on public.ramales to service_role;
 grant select, insert, update, delete on public.levantamientos to service_role;
+grant select, insert, update, delete on public.rutas to service_role;
