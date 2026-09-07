@@ -6,6 +6,7 @@ Aplicación en español para registrar trabajo de campo y consultarlo por ramal.
 - Captura y edición de ubicación, fecha, coordenadas, podas y cuadrillas participantes.
 - Filtro por ramal que actualiza los registros y el mapa.
 - Geolocalización mediante permiso del dispositivo, coordenadas manuales o selección de un punto en el mapa.
+- Seguimiento en vivo de la ubicación del usuario en el mapa principal mientras la página permanece abierta.
 - Persistencia en SQLite mediante D1 local, en `.wrangler/state`. El servidor escucha únicamente en `127.0.0.1` y se abre en `http://localhost:4178/`.
 
 ## Desarrollo

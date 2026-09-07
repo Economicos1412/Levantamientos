@@ -4,19 +4,23 @@ import type * as Leaflet from 'leaflet';
 import { crewLabel, type Levantamiento, type Ramal } from '@/lib/records';
 import { Skeleton } from '@/components/ui/skeleton';
 
-type Props = { records?: Levantamiento[]; ramales?: Ramal[]; selected?: string | null; onSelect?: (id: string) => void; point?: [number, number] | null; onPick?: (point: [number, number]) => void; compact?: boolean };
+type Props = { records?: Levantamiento[]; ramales?: Ramal[]; selected?: string | null; onSelect?: (id: string) => void; point?: [number, number] | null; onPick?: (point: [number, number]) => void; compact?: boolean; trackUser?: boolean };
 const EMPTY: Levantamiento[] = [];
 const NO_RAMALES: Ramal[] = [];
-export default function FieldMap({ records = EMPTY, ramales = NO_RAMALES, selected, onSelect, point, onPick, compact }: Props) {
+export default function FieldMap({ records = EMPTY, ramales = NO_RAMALES, selected, onSelect, point, onPick, compact, trackUser = false }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<Leaflet.Map | null>(null);
   const lib = useRef<typeof Leaflet | null>(null);
   const layers = useRef<Leaflet.LayerGroup | null>(null);
   const pickLayer = useRef<Leaflet.CircleMarker | null>(null);
+  const userLayer = useRef<Leaflet.LayerGroup | null>(null);
+  const firstUserFix = useRef(true);
   const callbacks = useRef({ onSelect, onPick });
   callbacks.current = { onSelect, onPick };
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
+  const [userPosition, setUserPosition] = useState<{ point: [number, number]; accuracy: number } | null>(null);
+  const [locationError, setLocationError] = useState('');
   useEffect(() => {
     let disposed = false;
     let observer: ResizeObserver | undefined;
@@ -27,6 +31,7 @@ export default function FieldMap({ records = EMPTY, ramales = NO_RAMALES, select
       map.current = m;
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>' }).on('tileerror', () => setError('No se pudo cargar parte del mapa. Revisa tu conexión.')).on('tileload', () => setError('')).addTo(m);
       layers.current = L.layerGroup().addTo(m);
+      userLayer.current = L.layerGroup().addTo(m);
       m.on('click', e => callbacks.current.onPick?.([Number(e.latlng.lat.toFixed(6)), Number(e.latlng.lng.toFixed(6))]));
       observer = new ResizeObserver(() => m.invalidateSize());
       observer.observe(container.current);
@@ -34,6 +39,17 @@ export default function FieldMap({ records = EMPTY, ramales = NO_RAMALES, select
     }).catch(() => setError('No se pudo abrir el mapa. Puedes registrar las coordenadas manualmente.'));
     return () => { disposed = true; observer?.disconnect(); map.current?.remove(); map.current = null; };
   }, []);
+  useEffect(() => {
+    if (!trackUser) return;
+    if (!navigator.geolocation) { setLocationError('Este dispositivo no ofrece geolocalización.'); return; }
+    const watchId = navigator.geolocation.watchPosition(position => {
+      setUserPosition({ point: [position.coords.latitude, position.coords.longitude], accuracy: position.coords.accuracy });
+      setLocationError('');
+    }, issue => {
+      setLocationError(issue.code === 1 ? 'Autoriza la ubicación para mostrar tu posición en vivo.' : 'No se pudo actualizar tu ubicación.');
+    }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [trackUser]);
   useEffect(() => {
     const L = lib.current, m = map.current, group = layers.current;
     if (!ready || !L || !m || !group) return;
@@ -72,10 +88,21 @@ export default function FieldMap({ records = EMPTY, ramales = NO_RAMALES, select
       m.setView(point, Math.max(m.getZoom(), 16));
     }
   }, [point?.[0], point?.[1], ready]);
+  useEffect(() => {
+    const L = lib.current, m = map.current, group = userLayer.current;
+    if (!ready || !L || !m || !group) return;
+    group.clearLayers();
+    if (!userPosition) return;
+    L.circle(userPosition.point, { radius: userPosition.accuracy, color: '#167a4a', weight: 1, fillColor: '#31a86a', fillOpacity: .12, interactive: false }).addTo(group);
+    L.circleMarker(userPosition.point, { radius: 9, color: '#ffffff', weight: 3, fillColor: '#168a50', fillOpacity: 1 }).bindTooltip('Mi ubicación · actualización en vivo', { direction: 'top' }).addTo(group);
+    if (firstUserFix.current && !records.length && !ramales.length) { m.setView(userPosition.point, 16); firstUserFix.current = false; }
+  }, [userPosition, ready, records.length, ramales.length]);
   return <div className={`field-map ${compact ? 'compact-map' : ''}`}>
     <div ref={container} className="map-canvas" aria-label={onPick ? 'Mapa: pulsa para seleccionar las coordenadas' : 'Mapa de ubicaciones de los levantamientos'}/>
     {!ready && !error && <Skeleton className="map-loading"/>}
     {error && <p className="map-warning" role="status">{error}</p>}
+    {trackUser && userPosition && <button type="button" className="user-location-control" onClick={() => map.current?.setView(userPosition.point, 16)}>Centrar en mi ubicación</button>}
+    {trackUser && locationError && <p className="location-warning" role="status">{locationError}</p>}
   </div>;
 }
 
