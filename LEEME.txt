@@ -1,7 +1,7 @@
 LEVANTAMIENTOS — VERSIÓN LOCAL
 
 VERSIÓN EN LÍNEA PÚBLICA
-https://levantamientos-ricardoyahelt.netlify.app/
+https://levantamient.netlify.app/
 No requiere iniciar sesión. Cualquier persona que tenga el enlace puede consultar y modificar los registros compartidos de esta versión.
 
 Para abrir: haz doble clic en "Abrir Levantamientos.cmd". El iniciador mantiene activo el servidor local en segundo plano.
@@ -25,4 +25,4 @@ El mapa necesita Internet para cargar su cartografía. La ubicación del disposi
 Para cerrar el programa en segundo plano: usa "Detener Levantamientos.cmd".
 Después de reiniciar Windows, vuelve a usar "Abrir Levantamientos.cmd".
 
-La versión local solo escucha en esta computadora. La versión de Netlify guarda sus propios registros en línea y comenzó vacía; los datos locales no se transfirieron. Esta carpeta está preparada para el Node.js instalado en esta computadora.
+La versión local solo escucha en esta computadora. La versión de Netlify guarda sus propios registros en Supabase y comienza vacía; los datos locales no se transfirieron. Esta carpeta está preparada para el Node.js instalado en esta computadora.
