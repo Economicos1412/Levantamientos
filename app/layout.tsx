@@ -3,7 +3,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Levantamientos',
-  icons: { icon: '/favicon.svg' },
+  icons: { icon: '/favicon.png' },
   description: 'Registro de levantamientos por ramal, circuitos y subestación con geolocalización, podas y cuadrillas.',
 };
 
