@@ -181,7 +181,7 @@ function Registry() {
   }, [client]);
 
   return <main className="workspace">
-    <div className="page-heading"><div><p className="eyebrow">OPERACIÓN EN CAMPO</p><h2>Registro de levantamientos</h2></div><div className="heading-actions"><Button variant="outline" onClick={() => { setRouteError(''); setRoutesOpen(true); }}><Route/> Rutas guardadas</Button><Button variant="outline" onClick={() => { setCatalogError(''); setCatalogOpen(true); }}><Network/> Catálogo de ramales</Button><Button onClick={newRecord} disabled={loading || !!loadError}><Plus/> Nuevo levantamiento</Button></div></div>
+    <div className="page-heading"><div className="title-block"><p className="eyebrow">TABLERO OPERATIVO</p><h2>Registro de levantamientos</h2><p className="page-description">Ubicaciones, cuadrillas y podas organizadas por ramal.</p></div><div className="heading-actions"><Button variant="outline" onClick={() => { setRouteError(''); setRoutesOpen(true); }}><Route/> Rutas guardadas</Button><Button variant="outline" onClick={() => { setCatalogError(''); setCatalogOpen(true); }}><Network/> Catálogo de ramales</Button><Button onClick={newRecord} disabled={loading || !!loadError}><Plus/> Nuevo levantamiento</Button></div></div>
     {saved && <p role="status" className="success-note">{saved}</p>}
     {routeError && <p role="alert" className="error-box">{routeError}</p>}
     {loadError && <div role="alert" className="error-box">No se pudieron cargar los registros. <Button variant="outline" onClick={() => void refresh()}><RefreshCw/> Reintentar</Button></div>}
