@@ -207,6 +207,19 @@ body {
   pointer-events: none;
 }
 .brand { position: relative; z-index: 1; gap: 15px; }
+.brand-logo {
+  display: grid;
+  place-items: center;
+  width: 158px;
+  height: 52px;
+  padding: 7px 10px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #cfe0dc;
+  border-radius: 13px;
+  box-shadow: 0 6px 20px #071a202f;
+}
+.brand-logo img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .brand-mark {
   width: 50px;
   height: 50px;
@@ -339,6 +352,7 @@ body {
 @media (max-width: 760px) {
   .app-header { padding: 16px 18px; }
   .brand-mark { width: 44px; height: 44px; border-radius: 13px; }
+  .brand-logo { width: 124px; height: 44px; padding: 6px 8px; border-radius: 11px; }
   .brand h1 { font-size: 21px; }
   .workspace { padding: 24px 14px 36px; }
   .page-heading { align-items: flex-start; margin-bottom: 20px; }
@@ -352,6 +366,12 @@ body {
   .field-map { height: 430px; }
   .records-panel, .map-panel { border-radius: 15px; }
   .map-summary { justify-content: space-between; gap: 10px; }
+}
+@media (max-width: 480px) {
+  .brand-logo { width: 108px; height: 40px; }
+  .brand { gap: 10px; }
+  .brand-overline { font-size: 9px !important; letter-spacing: .1em; }
+  .brand h1 { font-size: 19px; }
 }
 @media (max-width: 430px) {
   .heading-actions { grid-template-columns: 1fr; }
