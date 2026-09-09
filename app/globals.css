@@ -259,7 +259,7 @@ body {
 }
 
 .workspace { max-width: 1560px; padding: 32px clamp(18px, 4vw, 56px) 44px; }
-.page-heading { align-items: flex-end; margin-bottom: 24px; }
+.page-heading { align-items: center; margin-bottom: 24px; }
 .title-block { max-width: 620px; }
 .eyebrow { margin-bottom: 7px; color: #087f5b; font-size: 11px; letter-spacing: .15em; }
 .page-heading h2 { color: #182b34; font-size: clamp(28px, 3vw, 38px); font-weight: 720; letter-spacing: -.045em; line-height: 1.05; }
